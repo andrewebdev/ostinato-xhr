@@ -1,0 +1,202 @@
+<link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../iron-ajax/iron-ajax.html">
+<script src="../history.js/scripts/bundled/html5/native.history.js"></script>
+
+<!--
+`ostinato-xhr`
+custom xhr requests
+
+@demo demo/index.html 
+-->
+<script>
+    XHRContextBehavior = {
+        properties: {
+            /**
+             * What will the new page title be when applied
+             */
+            pageTitle: String
+        },
+
+        /**
+         * Returns browser history data object. The result from this will
+         * be passed to history.pushState().
+         * Override this function to create your own updates to pass data
+         * along.
+         */
+        getData: function() {
+            return null;
+        },
+
+        /**
+         * Apply any changes to the document based on the page context
+         * Override this function to create your own updates to the page
+         * context.
+         */
+        apply: function() { }
+    };
+</script>
+
+
+<dom-module id="ostinato-xhr">
+    <template>
+        <iron-ajax
+            id="xhr"
+            method="[[method]]"
+            handle-as="text/html"
+            headers='{"X-Requested-With": "XMLHttpRequest"}'
+            content-type="[[contentType]]"
+            on-response="_handleResponse"
+            on-error="_handleError"></iron-ajax>
+    </template>
+    <script>
+        Polymer({
+            is: 'ostinato-xhr',
+
+            properties: {
+                /**
+                 * The target element to insert the response content into
+                 */
+                targetSelector: String,
+
+                /**
+                 * The http method to use for the request
+                 */
+                method: {
+                    type: String,
+                    value: 'get'
+                },
+
+                /**
+                 * The contenttype to use for the request
+                 */
+                contentType: {
+                    type: String,
+                    value: null
+                },
+
+                /**
+                 * Whether or not to update the browser history when this
+                 * component is used.
+                 */
+                updateHistory: {
+                    type: Boolean,
+                    value: false
+                },
+
+                /**
+                 * The selector to the element that implements the
+                 * ostinato-xhr-context. This element must have a `apply`
+                 * method
+                 */
+                xhrContextSelector: String
+            },
+
+            attached: function() {
+                if (this.updateHistory) {
+                    History.Adapter.bind(window, 'statechange', function() {
+                        var state = History.getState();
+                        this.generateRequest(state.url);
+                    }.bind(this));
+                }
+            },
+
+            /**
+             * Make a request to the url, optionally passing data
+             */
+            generateRequest: function(url, data) {
+                this.debounce(url, function() {
+                    if (data) { this.$.xhr.body = data; }
+                    this.$.xhr.url = url;
+                    this.$.xhr.generateRequest();
+                });
+            },
+
+            _handleResponse: function() {
+                var target = document.querySelector(this.targetSelector);
+                var doc = new DOMParser().parseFromString(this.$.xhr.lastResponse, "text/html");
+
+                var content = doc.querySelector(this.targetSelector);
+                if (content) {
+                    target.innerHTML = content.innerHTML;
+                } else {
+                    target.innerHTML = this.$.xhr.lastResponse;
+                }
+                content = null;
+
+                // Now that the content was updated, update the history also
+                if (this.updateHistory) {
+                    var data = null,
+                        title = null,
+                        context = target.querySelector(this.xhrContextSelector);
+
+                    if (context) {
+                        title = context.pageTitle;
+                        data = context.getData();
+                        context.apply();
+                    }
+
+                    // Update the browser history with the 
+                    History.pushState(data, title, this.$.xhr.url);
+                }
+            },
+
+            _handleError: function() {
+                console.log('TODO: Handle error response');
+            }
+        });
+    </script>
+</dom-module>
+
+
+<dom-module id="ostinato-xhr-form">
+    <script>
+        Polymer({
+            /**
+             * This element will extend the form so that it will submit via
+             * ajax. This is a full ostinato-xhr post, so the expected response
+             * should be html.
+             *
+             * Normal submit buttons in the form will still submit it
+             * normally. If you want to have it submitted via ajax, you need
+             * to include a element with the [confirm] attribute.
+             *
+             * A [cancel] element can be specified in the same way.
+             *
+             */
+            is: 'ostinato-xhr-form',
+            extends: 'form',
+
+            properties: {
+                /**
+                 * The target selector for the container to replace the form
+                 * content with the response.
+                 */
+                targetSelector: String,
+            },
+
+            attached: function() {
+                this.xhr = document.createElement('ostinato-xhr');
+                this.xhr.contentType = "application/x-www-form-urlencoded";
+                this.xhr.method = this.method;
+                this.xhr.targetSelector = this.targetSelector;
+                this.xhr.url = this.action;
+
+                this.confirm = Polymer.dom(this).querySelector('[confirm]');
+                this.cancel = Polymer.dom(this).querySelector('[cancel]');
+
+                this.confirm.addEventListener('click', function() {
+                    var json = this.serialize();
+                    this.xhr.generateRequest(this.action, json);
+                }.bind(this));
+            },
+
+            serialize: function() {
+                var json = {};
+                for (var i=0; i < this.elements.length; i++) {
+                    json[this.elements[i].name] = this.elements[i].value;
+                }
+                return json;
+            }
+        });
+    </script>
+</dom-module>
