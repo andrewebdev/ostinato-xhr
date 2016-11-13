@@ -2,6 +2,10 @@
   "name": "ostinato-xhr",
   "description": "custom xhr requests",
   "main": "ostinato-xhr.html",
+  "authors": [
+    "Andre Engelbrecht <litt.fire.sa@gmail.com>"
+  ],
+  "licence": "MIT",
   "dependencies": {
     "polymer": "Polymer/polymer#^1.4.0",
     "iron-ajax": "PolymerElements/iron-ajax#^1.4.3",
@@ -12,5 +16,12 @@
     "iron-demo-helpers": "PolymerElements/iron-demo-helpers#^1.0.0",
     "web-component-tester": "^4.0.0",
     "webcomponentsjs": "webcomponents/webcomponentsjs#^0.7.0"
-  }
+  },
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ]
 }
