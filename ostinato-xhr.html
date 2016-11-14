@@ -23,13 +23,11 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 <link rel="import" href="../iron-ajax/iron-ajax.html">
 <script src="../history.js/scripts/bundled/html5/native.history.js"></script>
 
-<!--
-`ostinato-xhr`
-custom xhr requests
 
-@demo demo/index.html 
--->
 <script>
+    /**
+     * A base behaviour that will allow for changing page context.
+     */
     XHRContextBehavior = {
         properties: {
             /**
@@ -57,7 +55,13 @@ custom xhr requests
     };
 </script>
 
+<!--
+`ostinato-xhr`
+Makes an ajax request to a resource, and inserts the html response into the
+target dom node.
 
+@demo demo/index.html 
+-->
 <dom-module id="ostinato-xhr">
     <template>
         <iron-ajax
@@ -168,7 +172,49 @@ custom xhr requests
     </script>
 </dom-module>
 
+<!--
+`ostinato-xhr-link`
+Wrap this around an anchor tag if you want the link to be opened using
+`ostinato-xhr`.
+-->
+<script>
+    Polymer({
+        is: 'xhr-link',
 
+        properties: {
+            /**
+             * The query selector for the `ostinato-xhr` element to use when
+             * making the request.
+             */
+            xhrSelector: {
+                type: String,
+                value: "#xhrContent"
+            }
+        },
+
+        ready: function() {
+            this.link = Polymer.dom(this).querySelector('a');
+            this.link.addEventListener('click', function(ev) {
+                ev.preventDefault();
+                this._generateRequest();
+            }.bind(this));
+        },
+
+        /**
+         * Get the `ostinato-xhr` element and make the request.
+         */
+        _generateRequest: function() {
+            var loader = document.querySelector(this.xhrSelector);
+            loader.generateRequest(this.link.href);
+        }
+    });
+</script>
+
+<!--
+`ostinato-xhr-form`
+Submits a form via ajax and uses the `ostinato-xhr` component to handle the
+request/response.
+-->
 <dom-module id="ostinato-xhr-form">
     <script>
         Polymer({
@@ -185,7 +231,6 @@ custom xhr requests
              *
              */
             is: 'ostinato-xhr-form',
-            extends: 'form',
 
             properties: {
                 /**
@@ -193,30 +238,35 @@ custom xhr requests
                  * content with the response.
                  */
                 targetSelector: String,
+
+                method: {
+                    type: String,
+                    value: 'post'
+                },
+
+                contentType: {
+                    type: String,
+                    value: "application/x-www-form-urlencoded"
+                }
             },
 
-            attached: function() {
+            ready: function() {
+                this.form = Polymer.dom(this).querySelector('form');
+
+                // Set up the xhr request object
                 this.xhr = document.createElement('ostinato-xhr');
-                this.xhr.contentType = "application/x-www-form-urlencoded";
+                this.xhr.contentType = this.contentType;
                 this.xhr.method = this.method;
                 this.xhr.targetSelector = this.targetSelector;
                 this.xhr.url = this.action;
 
+                // Handle the confirm button events
                 this.confirm = Polymer.dom(this).querySelector('[confirm]');
-                this.cancel = Polymer.dom(this).querySelector('[cancel]');
-
-                this.confirm.addEventListener('click', function() {
-                    var json = this.serialize();
-                    this.xhr.generateRequest(this.action, json);
+                this.confirm.addEventListener('click', function(ev) {
+                    ev.preventDefault();
+                    var data = new FormData(this.form);
+                    this.xhr.generateRequest(this.form.action, data);
                 }.bind(this));
-            },
-
-            serialize: function() {
-                var json = {};
-                for (var i=0; i < this.elements.length; i++) {
-                    json[this.elements[i].name] = this.elements[i].value;
-                }
-                return json;
             }
         });
     </script>

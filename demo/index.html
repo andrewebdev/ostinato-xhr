@@ -34,6 +34,9 @@
         <h3>Basic ostinato-xhr Demo</h3>
         <demo-snippet>
             <template>
+                <xhr-link xhr-selector="#xhr">
+                    <a href="view1.html">Load content</a>
+                </xhr-link>
                 <button onclick="loadContent()">Load Content</button>
                 <ostinato-xhr id="xhr"
                               target-selector="#content"
@@ -42,6 +45,22 @@
                 </ostinato-xhr>
                 <div id="content">
                     <!-- content gets inserted here -->
+                </div>
+            </template>
+        </demo-snippet>
+    </div>
+
+    <div class="vertical-section-container centered">
+        <h3>ostinato-xhr-form</h3>
+        <demo-snippet>
+            <template>
+                <div class="formContent">
+                    <ostinato-xhr-form target-selector=".formContent">
+                        <form action="https://httpbin.org/post" method="post">
+                            <input type="text" name="name">
+                            <input type="submit" value="submit name" confirm>
+                        </form>
+                    </ostinato-xhr-form>
                 </div>
             </template>
         </demo-snippet>
