@@ -28,7 +28,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
     /**
      * A base behaviour that will allow for changing page context.
      */
-    XHRContextBehavior = {
+    var XHRContextBehavior = {
         properties: {
             /**
              * What will the new page title be when applied
@@ -67,7 +67,7 @@ target dom node.
         <iron-ajax
             id="xhr"
             method="[[method]]"
-            handle-as="text/html"
+            handle-as="text"
             headers='{"X-Requested-With": "XMLHttpRequest"}'
             content-type="[[contentType]]"
             on-response="_handleResponse"
@@ -173,7 +173,7 @@ target dom node.
 </dom-module>
 
 <!--
-`ostinato-xhr-link`
+`xhr-link`
 Wrap this around an anchor tag if you want the link to be opened using
 `ostinato-xhr`.
 -->
@@ -209,6 +209,47 @@ Wrap this around an anchor tag if you want the link to be opened using
         }
     });
 </script>
+
+<!--
+`xhr-link-list`
+Wrap this around a set of anchor tags that all use the same `ostinato-xhr`
+element.
+-->
+<script>
+    Polymer({
+        is: 'xhr-link-list',
+
+        properties: {
+            /**
+             * The query selector for the `ostinato-xhr` element to use when
+             * making the request.
+             */
+            xhrSelector: {
+                type: String,
+                value: "#xhrContent"
+            }
+        },
+
+        ready: function() {
+            var links = Polymer.dom(this).querySelectorAll('a');
+            for (var i=0; i < links.length; i++) {
+                links[i].addEventListener('click', function(ev) {
+                    ev.preventDefault();
+                    this._generateRequest(ev.target.href);
+                }.bind(this));
+            }
+        },
+
+        /**
+         * Get the `ostinato-xhr` element and make the request.
+         */
+        _generateRequest: function(href) {
+            var loader = document.querySelector(this.xhrSelector);
+            loader.generateRequest(href);
+        }
+    });
+</script>
+
 
 <!--
 `ostinato-xhr-form`

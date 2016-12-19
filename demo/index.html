@@ -51,6 +51,30 @@
     </div>
 
     <div class="vertical-section-container centered">
+        <h3>Use the link-list</h3>
+        <p>If you have multipe links that should all use the same container. you
+        can wrap them in a <pre>xhr-link-list</pre>.</p>
+
+        <demo-snippet>
+            <template>
+                <xhr-link-list xhr-selector="#xhrLinkList">
+                    <a href="view1.html">Load view 1</a>
+                    <a href="view2.html">Load view 2</a>
+                    <a href="view3.html">Load view 3</a>
+                </xhr-link-list>
+
+                <ostinato-xhr id="xhrLinkList"
+                              target-selector="#linkListContent"
+                              xhr-context-selector="xhr-context">
+                </ostinato-xhr>
+                <div id="linkListContent">
+                    <!-- content gets inserted here -->
+                </div>
+            </template>
+        </demo-snippet>
+    </div>
+
+    <div class="vertical-section-container centered">
         <h3>ostinato-xhr-form</h3>
         <demo-snippet>
             <template>
