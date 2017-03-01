@@ -55,10 +55,11 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
     };
 </script>
 
+
 <!--
 `ostinato-xhr`
 Makes an ajax request to a resource, and inserts the html response into the
-target dom node.
+target dom node(s).
 
 @demo demo/index.html 
 -->
@@ -79,9 +80,12 @@ target dom node.
 
             properties: {
                 /**
-                 * The target element to insert the response content into
+                 * A comma separated list of target element selectors which
+                 * should receive the new content.
+                 * If these nodes exist in the response content, then it will
+                 * be extracted directly from the response.
                  */
-                targetSelector: String,
+                targetSelectors: String,
 
                 /**
                  * The http method to use for the request
@@ -130,37 +134,39 @@ target dom node.
              */
             generateRequest: function(url, data) {
                 this.debounce(url, function() {
-                    if (data) { this.$.xhr.body = data; }
+                    if (data) this.$.xhr.body = data;
                     this.$.xhr.url = url;
                     this.$.xhr.generateRequest();
                 });
             },
 
             _handleResponse: function() {
-                var target = document.querySelector(this.targetSelector);
                 var doc = new DOMParser().parseFromString(this.$.xhr.lastResponse, "text/html");
+                var targetSelectorList = this.targetSelectors.split(',');
 
-                var content = doc.querySelector(this.targetSelector);
-                if (content) {
-                    target.innerHTML = content.innerHTML;
-                } else {
-                    target.innerHTML = this.$.xhr.lastResponse;
-                }
-                content = null;
+                // Load the content for each of the targets
+                targetSelectorList.forEach(function(targetSelector) {
+                    var target = document.querySelector(targetSelector);
+                    var content = doc.querySelector(targetSelector);
 
-                // Now that the content was updated, update the history also
+                    if (content) {
+                        target.innerHTML = content.innerHTML;
+                    }
+                });
+
+                // Apply the context if available
+                var context = document.querySelector(this.xhrContextSelector);
+                if (context) { context.apply(); }
+
+                // Update the browser state if required
                 if (this.updateHistory) {
                     var data = null,
-                        title = null,
-                        context = target.querySelector(this.xhrContextSelector);
+                        title = null;
 
                     if (context) {
                         title = context.pageTitle;
                         data = context.getData();
-                        context.apply();
                     }
-
-                    // Update the browser history with the 
                     History.pushState(data, title, this.$.xhr.url);
                 }
             },
@@ -278,7 +284,7 @@ request/response.
                  * The target selector for the container to replace the form
                  * content with the response.
                  */
-                targetSelector: String,
+                targetSelectors: String,
 
                 method: {
                     type: String,
@@ -298,7 +304,7 @@ request/response.
                 this.xhr = document.createElement('ostinato-xhr');
                 this.xhr.contentType = this.contentType;
                 this.xhr.method = this.method;
-                this.xhr.targetSelector = this.targetSelector;
+                this.xhr.targetSelectors = this.targetSelectors;
                 this.xhr.url = this.action;
 
                 // Handle the confirm button events

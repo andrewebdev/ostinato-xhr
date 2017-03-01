@@ -31,18 +31,42 @@
 <body>
 
     <div class="vertical-section-container centered">
-        <h3>Basic ostinato-xhr Demo</h3>
+        <h3>Basic ostinato-xhr usage</h3>
+
+        <h4>xhr-link and xhr-link-list</h4>
+        <p>Wrap any links that is supposed to load content via
+        <code>ostinato-xhr</code> with the <code>xhr-link</code> tag.</p>
+
+        <p>If you have multipe links that should all use the same container, you
+        can wrap them in a <code>xhr-link-list</code>.</p>
+
+        <h4>Update History</h4>
+        <p>Notice how the browser history (and title) is upddated because
+        <code>update-hisory</code> property is set to True.</p>
+
         <demo-snippet>
             <template>
+                <button onclick="loadContent()">Load Content manually (view1.html)</button>
+
+                <hr>
+
                 <xhr-link xhr-selector="#xhr">
-                    <a href="view1.html">Load content</a>
+                    <a href="view1.html">Load view 1</a>
                 </xhr-link>
-                <button onclick="loadContent()">Load Content</button>
+
+                <xhr-link-list xhr-selector="#xhr">
+                    <a href="view2.html">Load view 2</a>
+                    <a href="view3.html">Load view 3</a>
+                </xhr-link-list>
+
+                <hr>
+
                 <ostinato-xhr id="xhr"
-                              target-selector="#content"
+                              target-selectors="#content"
                               update-history="true"
                               xhr-context-selector="xhr-context">
                 </ostinato-xhr>
+
                 <div id="content">
                     <!-- content gets inserted here -->
                 </div>
@@ -51,24 +75,31 @@
     </div>
 
     <div class="vertical-section-container centered">
-        <h3>Use the link-list</h3>
-        <p>If you have multipe links that should all use the same container. you
-        can wrap them in a <pre>xhr-link-list</pre>.</p>
+        <h3>Update multiple containers</h3>
+        <p>In this example, the document being loaded, <code>multiview.html</code>,
+        has a lot of content. But <code>ostinato-xhr</code> will only pull out the content
+        that we specify. In this case it's just a header and content</p>
 
         <demo-snippet>
             <template>
-                <xhr-link-list xhr-selector="#xhrLinkList">
-                    <a href="view1.html">Load view 1</a>
-                    <a href="view2.html">Load view 2</a>
-                    <a href="view3.html">Load view 3</a>
-                </xhr-link-list>
+                <xhr-link xhr-selector="#xhrMultiple">
+                    <a href="multiview.html">Load content</a>
+                </xhr-link>
 
-                <ostinato-xhr id="xhrLinkList"
-                              target-selector="#linkListContent"
-                              xhr-context-selector="xhr-context">
+                <ostinato-xhr id="xhrMultiple"
+                              target-selectors="#multiHeader,#multiContent">
                 </ostinato-xhr>
-                <div id="linkListContent">
-                    <!-- content gets inserted here -->
+
+                <div id="multiple">
+                    <div id="multiHeader">
+                        <p>This is a header container</p>
+                    </div>
+
+                    <p style="font-weight: bold; color: red;">Some content that should not be updated.</p>
+
+                    <div id="multiContent">
+                        <p>This is a content container</p>
+                    </div>
                 </div>
             </template>
         </demo-snippet>
@@ -78,8 +109,8 @@
         <h3>ostinato-xhr-form</h3>
         <demo-snippet>
             <template>
-                <div class="formContent">
-                    <ostinato-xhr-form target-selector=".formContent">
+                <div id="formContent">
+                    <ostinato-xhr-form target-selectors="#formContent">
                         <form action="https://httpbin.org/post" method="post">
                             <input type="text" name="name">
                             <input type="submit" value="submit name" confirm>
