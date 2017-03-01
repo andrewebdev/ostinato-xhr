@@ -181,14 +181,15 @@ target dom node(s).
     </script>
 </dom-module>
 
+
 <!--
-`xhr-link`
-Wrap this around an anchor tag if you want the link to be opened using
-`ostinato-xhr`.
+`ostinato-xhr-triggers`
+Use this element to specify which elements should behave as ostinato-xhr
+triggers. This will only handle triggers that is wrapped inside this element.
 -->
 <script>
     Polymer({
-        is: 'xhr-link',
+        is: 'ostinato-xhr-triggers',
 
         properties: {
             /**
@@ -198,55 +199,22 @@ Wrap this around an anchor tag if you want the link to be opened using
             xhrSelector: {
                 type: String,
                 value: "#xhrContent"
-            }
-        },
+            },
 
-        ready: function() {
-            this.link = Polymer.dom(this).querySelector('a');
-            this.link.addEventListener('click', function(ev) {
-                ev.preventDefault();
-                this._generateRequest();
-            }.bind(this));
-        },
-
-        /**
-         * Get the `ostinato-xhr` element and make the request.
-         */
-        _generateRequest: function() {
-            var loader = document.querySelector(this.xhrSelector);
-            loader.generateRequest(this.link.href);
-        }
-    });
-</script>
-
-<!--
-`xhr-link-list`
-Wrap this around a set of anchor tags that all use the same `ostinato-xhr`
-element.
--->
-<script>
-    Polymer({
-        is: 'xhr-link-list',
-
-        properties: {
-            /**
-             * The query selector for the `ostinato-xhr` element to use when
-             * making the request.
-             */
-            xhrSelector: {
+            triggerSelector: {
                 type: String,
-                value: "#xhrContent"
+                value: "[xhr-link]"
             }
         },
 
         ready: function() {
-            var links = Polymer.dom(this).querySelectorAll('a');
-            for (var i=0; i < links.length; i++) {
-                links[i].addEventListener('click', function(ev) {
+            var triggerList = Polymer.dom(this).querySelectorAll(this.triggerSelector);
+            triggerList.forEach(function(trigger) {
+                trigger.addEventListener('click', function(ev) {
                     ev.preventDefault();
                     this._generateRequest(ev.target.href);
                 }.bind(this));
-            }
+            }.bind(this));
         },
 
         /**
