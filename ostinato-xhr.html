@@ -124,7 +124,10 @@ target dom node(s).
                 if (this.updateHistory) {
                     History.Adapter.bind(window, 'statechange', function() {
                         var state = History.getState();
-                        this.generateRequest(state.url);
+                        // Only generate the request if the urls actually changed
+                        if (this.$.xhr.url !== state.url) {
+                            this.generateRequest(state.url);
+                        }
                     }.bind(this));
                 }
             },
