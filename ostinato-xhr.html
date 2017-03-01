@@ -140,10 +140,13 @@ target dom node(s).
                     if (data) this.$.xhr.body = data;
                     this.$.xhr.url = url;
                     this.$.xhr.generateRequest();
+                    this.fire('request-started');
                 });
             },
 
             _handleResponse: function() {
+                this.fire('request-completed');
+
                 var doc = new DOMParser().parseFromString(this.$.xhr.lastResponse, "text/html");
                 var targetSelectorList = this.targetSelectors.split(',');
 
@@ -172,6 +175,8 @@ target dom node(s).
                     }
                     History.pushState(data, title, this.$.xhr.url);
                 }
+
+                this.fire('content-updated');
             },
 
             _handleError: function() {

@@ -64,6 +64,24 @@
                 <div id="content">
                     <!-- content gets inserted here -->
                 </div>
+
+                <script>
+                    var xhr = document.querySelector('#xhr');
+
+                    xhr.addEventListener('request-started', function(ev) {
+                        document.querySelector('#content').innerHTML = 'LOADING...';
+                        console.log('Started...');
+                    });
+
+                    xhr.addEventListener('request-completed', function(ev) {
+                        console.log('Completed...');
+                    });
+
+                    xhr.addEventListener('content-updated', function(ev) {
+                        console.log('Updated...');
+                    });
+
+                </script>
             </template>
         </demo-snippet>
     </div>
