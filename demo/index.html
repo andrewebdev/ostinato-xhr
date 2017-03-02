@@ -47,17 +47,15 @@
 
                 <hr>
 
-                <ostinato-xhr-triggers xhr-selector="#xhr">
-                    <a href="view1.html" xhr-link>Load view 1</a>
-                    <a href="view2.html" xhr-link>Load view 2</a>
-                    <a href="view3.html" xhr-link>Load view 3</a>
-                </ostinato-xhr-triggers>
+                <a href="view1.html" xhr-link>Load view 1</a>
+                <a href="view2.html" xhr-link>Load view 2</a>
+                <a href="view3.html" xhr-link>Load view 3</a>
 
                 <hr>
 
                 <ostinato-xhr id="xhr"
                               target-selectors="#content"
-                              update-history="true"
+                              update-history
                               xhr-context-selector="xhr-context">
                 </ostinato-xhr>
 
@@ -65,22 +63,41 @@
                     <!-- content gets inserted here -->
                 </div>
 
+                <ostinato-xhr-triggers id="basicTriggers" xhr-selector="#xhr"></ostinato-xhr-triggers>
+
                 <script>
-                    var xhr = document.querySelector('#xhr');
+                    (function() {
+                        var xhr = document.querySelector('#xhr');
 
-                    xhr.addEventListener('request-started', function(ev) {
-                        document.querySelector('#content').innerHTML = 'LOADING...';
-                        console.log('Started...');
-                    });
+                        // We are going to manually call the link events, since the
+                        // demo-snippet breaks the behaviour.
+                        // That said it does serve as a example of how it can be
+                        // triggered manually.
+                        var triggers = document.querySelector('#basicTriggers');
+                        var triggerLinks = document.querySelectorAll('[xhr-link]');
+                        triggerLinks.forEach(function(link) {
+                            link.addEventListener('click', function(ev) {
+                                ev.preventDefault();
+                                console.log(triggers);
+                                triggers.triggerRequest(ev.target.href);
+                            });
+                        });
 
-                    xhr.addEventListener('request-completed', function(ev) {
-                        console.log('Completed...');
-                    });
+                        // Example of how events can be used to show loading
+                        // notifications etc.
+                        xhr.addEventListener('request-started', function(ev) {
+                            document.querySelector('#content').innerHTML = 'LOADING...';
+                            console.log('Started...');
+                        });
 
-                    xhr.addEventListener('content-updated', function(ev) {
-                        console.log('Updated...');
-                    });
+                        xhr.addEventListener('request-completed', function(ev) {
+                            console.log('Completed...');
+                        });
 
+                        xhr.addEventListener('content-updated', function(ev) {
+                            console.log('Updated...');
+                        });
+                    })();
                 </script>
             </template>
         </demo-snippet>
@@ -94,9 +111,7 @@
 
         <demo-snippet>
             <template>
-                <ostinato-xhr-triggers xhr-selector="#xhrMultiple">
-                    <a href="multiview.html" xhr-link>Load content</a>
-                </ostinato-xhr-triggers>
+                <a href="multiview.html" xhr-multi>Load content</a>
 
                 <ostinato-xhr id="xhrMultiple"
                               target-selectors="#multiHeader,#multiContent">
@@ -113,6 +128,28 @@
                         <p>This is a content container</p>
                     </div>
                 </div>
+
+                <ostinato-xhr-triggers
+                    id="multiTriggers"
+                    xhr-selector="#xhrMultiple"
+                    trigger-selector="[xhr-multi]"></ostinato-xhr-triggers>
+
+                <script>
+                    (function() {
+                        // We are going to manually call the link events, since the
+                        // demo-snippet breaks the behaviour.
+                        // That said it does serve as a example of how it can be
+                        // triggered manually.
+                        var triggers = document.querySelector('#multiTriggers');
+                        var triggerLinks = document.querySelectorAll('[xhr-multi]');
+                        triggerLinks.forEach(function(link) {
+                            link.addEventListener('click', function(ev) {
+                                ev.preventDefault();
+                                triggers.triggerRequest(ev.target.href);
+                            });
+                        });
+                    })();
+                </script>
             </template>
         </demo-snippet>
     </div>

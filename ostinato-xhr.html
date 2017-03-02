@@ -213,11 +213,11 @@ triggers. This will only handle triggers that is wrapped inside this element.
         },
 
         ready: function() {
-            var triggerList = Polymer.dom(this).querySelectorAll(this.triggerSelector);
+            var triggerList = document.querySelectorAll(this.triggerSelector);
             triggerList.forEach(function(trigger) {
                 trigger.addEventListener('click', function(ev) {
                     ev.preventDefault();
-                    this._generateRequest(ev.target.href);
+                    this.triggerRequest(ev.target.href);
                 }.bind(this));
             }.bind(this));
         },
@@ -225,7 +225,7 @@ triggers. This will only handle triggers that is wrapped inside this element.
         /**
          * Get the `ostinato-xhr` element and make the request.
          */
-        _generateRequest: function(href) {
+        triggerRequest: function(href) {
             var loader = document.querySelector(this.xhrSelector);
             loader.generateRequest(href);
         }
