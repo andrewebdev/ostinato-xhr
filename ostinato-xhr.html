@@ -217,7 +217,7 @@ triggers. This will only handle triggers that is wrapped inside this element.
             triggerList.forEach(function(trigger) {
                 trigger.addEventListener('click', function(ev) {
                     ev.preventDefault();
-                    this.triggerRequest(ev.target.href);
+                    this.triggerRequest(ev.currentTarget.href);
                 }.bind(this));
             }.bind(this));
         },
