@@ -36,6 +36,14 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
             pageTitle: String
         },
 
+        attached: function() {
+            this.apply();
+            this.fire('context-attached', {
+                title: this.pageTitle,
+                data: this.getData()
+            });
+        },
+
         /**
          * Returns browser history data object. The result from this will
          * be passed to history.pushState().
@@ -162,19 +170,16 @@ target dom node(s).
 
                 // Apply the context if available
                 var context = document.querySelector(this.xhrContextSelector);
-                if (context) { context.apply(); }
-
-                // Update the browser state if required
-                if (this.updateHistory) {
-                    var data = null,
-                        title = null;
-
-                    if (context) {
-                        title = context.pageTitle;
-                        data = context.getData();
+                context.addEventListener('context-attached', function(ev) {
+                    // Update the browser state if required
+                    if (this.updateHistory) {
+                        History.pushState(
+                            ev.detail.data,
+                            ev.detail.title,
+                            this.$.xhr.url
+                        );
                     }
-                    History.pushState(data, title, this.$.xhr.url);
-                }
+                }.bind(this));
 
                 this.fire('content-updated');
             },
