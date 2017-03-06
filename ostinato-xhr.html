@@ -33,33 +33,21 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
             /**
              * What will the new page title be when applied
              */
-            pageTitle: String
+            pageTitle: String,
+
+            /**
+             * The selector for the xhr element that should manage state
+             * if required.
+             */
+            xhrSelector: {
+                type: String,
+                value: "#xhrContent"
+            }
         },
 
         attached: function() {
-            this.apply();
-            this.fire('context-attached', {
-                title: this.pageTitle,
-                data: this.getData()
-            });
-        },
-
-        /**
-         * Returns browser history data object. The result from this will
-         * be passed to history.pushState().
-         * Override this function to create your own updates to pass data
-         * along.
-         */
-        getData: function() {
-            return null;
-        },
-
-        /**
-         * Apply any changes to the document based on the page context
-         * Override this function to create your own updates to the page
-         * context.
-         */
-        apply: function() { }
+            document.querySelector(this.xhrSelector).setContext(this);
+        }
     };
 </script>
 
@@ -118,14 +106,7 @@ target dom node(s).
                 updateHistory: {
                     type: Boolean,
                     value: false
-                },
-
-                /**
-                 * The selector to the element that implements the
-                 * ostinato-xhr-context. This element must have a `apply`
-                 * method
-                 */
-                xhrContextSelector: String
+                }
             },
 
             attached: function() {
@@ -168,20 +149,14 @@ target dom node(s).
                     }
                 });
 
-                // Apply the context if available
-                var context = document.querySelector(this.xhrContextSelector);
-                context.addEventListener('context-attached', function(ev) {
-                    // Update the browser state if required
-                    if (this.updateHistory) {
-                        History.pushState(
-                            ev.detail.data,
-                            ev.detail.title,
-                            this.$.xhr.url
-                        );
-                    }
-                }.bind(this));
-
                 this.fire('content-updated');
+            },
+
+            setContext: function(context) {
+                if (this.updateHistory) {
+                    History.pushState(null, context.pageTitle, this.$.xhr.url);
+                }
+                this.fire('context-applied', {context: context});
             },
 
             _handleError: function() {
