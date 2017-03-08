@@ -8,8 +8,7 @@
   "licence": "MIT",
   "dependencies": {
     "polymer": "Polymer/polymer#^1.4.0",
-    "iron-ajax": "PolymerElements/iron-ajax#^1.4.3",
-    "history.js": "browserstate/history.js#~1.8.0"
+    "iron-ajax": "PolymerElements/iron-ajax#^1.4.3"
   },
   "devDependencies": {
     "iron-component-page": "PolymerElements/iron-component-page#^1.0.0",

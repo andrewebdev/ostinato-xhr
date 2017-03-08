@@ -21,7 +21,6 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 <link rel="import" href="../polymer/polymer.html">
 <link rel="import" href="../iron-ajax/iron-ajax.html">
-<script src="../history.js/scripts/bundled/html5/native.history.js"></script>
 
 
 <script>
@@ -111,11 +110,24 @@ target dom node(s).
 
             attached: function() {
                 if (this.updateHistory) {
-                    History.Adapter.bind(window, 'statechange', function() {
-                        var state = History.getState();
-                        // Only generate the request if the urls actually changed
-                        if (this.$.xhr.url !== state.url) {
-                            this.generateRequest(state.url);
+                    window.addEventListener('popstate', function(ev) {
+                        if (ev.state) {
+                            /*
+                               Only generate the request if the urls actually
+                               changed.
+
+                               Compare the urls without any hash values.
+                               This is because we don't want a hash to generate
+                               a request. Hash changes are only for on page
+                               anchors.
+                            */
+                            var re = new RegExp("#([^\\s]*)");
+                            var stateURL = ev.state.url.replace(re, '');
+                            var xhrURL = this.$.xhr.url.replace(re, '');
+
+                            if (xhrURL != stateURL) {
+                                this.generateRequest(ev.state.url);
+                            }
                         }
                     }.bind(this));
                 }
@@ -153,10 +165,24 @@ target dom node(s).
             },
 
             setContext: function(context) {
-                if (this.updateHistory) {
-                    History.pushState(null, context.pageTitle, this.$.xhr.url);
+                if (this.updateHistory && this.$.xhr.url) {
+                    var currentState = window.history.state;
+                    var state = {
+                        title: context.pageTitle,
+                        url: this.$.xhr.url
+                    };
+
+                    // Only push the state if it actually changed
+                    if ((!currentState) || (state.url != window.history.state.url)) {
+                        window.history.pushState(state, context.pageTitle, this.$.xhr.url);
+                    }
+
+                    // Due to a bug in many browsers, history api doesn't
+                    // always update the title.
+                    // do so manually here till this is fixed in browsers.
+                    document.title = context.pageTitle;
                 }
-                this.fire('context-applied', {context: context});
+                this.fire('context-attached', {context: context});
             },
 
             _handleError: function() {
