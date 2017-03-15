@@ -145,21 +145,76 @@ target dom node(s).
                 });
             },
 
+            /**
+             * The response is where the majority of the heavy lifting happens.
+             *
+             * First it will parse the response string into a new html document.
+             * This document can then be queried like any other html doc.
+             *
+             * We then have to find any imports in this document, and make sure
+             * that we manually import those, before doing anything else.
+             * Since each import happens asyncronously, we will wait for all
+             * imports to finish, before we proceed to the next step.
+             *
+             * Once all the imports are finished, we can then insert content
+             * into their respecive containers.
+             *
+             * WARNING: Regarding `<style>` tags inside imports.
+             * Style tags in the top level of the imported document will be
+             * applied for every request, but won't be re-applied when you come
+             * back to a page that have already been imported. Because of this
+             * you'll tart seeing style conflicts, as you navigate to one page,
+             * and then back to a previous page.
+             * For this reason it's propably better to wrap your custom styles
+             * in a webcomponent's shadow dom, and then use that component to
+             * style your content.
+             */
             _handleResponse: function() {
                 this.fire('request-completed');
 
                 var doc = new DOMParser().parseFromString(this.$.xhr.lastResponse, "text/html");
                 var targetSelectorList = this.targetSelectors.split(',');
 
-                // Load the content for each of the targets
-                targetSelectorList.forEach(function(targetSelector) {
-                    var target = document.querySelector(targetSelector);
-                    var content = doc.querySelector(targetSelector);
+                // Since we might have new imports for the page being loaded
+                // we need to ensure that we import them before putting any
+                // content into the dom.
+                this.importsFinished = false;
+                var importList = doc.querySelectorAll('link[rel="import"]');
 
-                    if (content) {
-                        target.innerHTML = content.innerHTML;
+                // Import each document
+                importList.forEach(function(link, index) {
+                    this.importHref(link.getAttribute('href'), function(e) {
+                        // e.target.import is the import document.
+                        // No need to do anything here for now ...
+                        if (index == importList.length - 1) {
+                            this.importsFinished = true;
+                        }
+                    }, function(e) {
+                        // loading error
+                        if (index == importList.length - 1) {
+                            this.importsFinished = true;
+                        }
+                        throw 'Error: Could not import document, "' + link.getAttribute('href') + '"';
+                    });
+                }.bind(this));
+
+                // Load the content for each of the targets
+                // We need to wait for every import to finish
+                var importCheck = window.setInterval(function() {
+                    if (this.importsFinished) {
+                        this.fire('imports-finished', {importList: importList});
+
+                        targetSelectorList.forEach(function(targetSelector) {
+                            var target = document.querySelector(targetSelector);
+                            var content = doc.querySelector(targetSelector);
+
+                            if (content) {
+                                target.innerHTML = content.innerHTML;
+                            }
+                        });
+                        window.clearInterval(importCheck);
                     }
-                });
+                }.bind(this), 50);
 
                 this.fire('content-updated');
             },
