@@ -178,43 +178,45 @@ target dom node(s).
                 // Since we might have new imports for the page being loaded
                 // we need to ensure that we import them before putting any
                 // content into the dom.
-                this.importsFinished = false;
                 var importList = doc.querySelectorAll('link[rel="import"]');
+                if (importList) {
+                    this.importsFinished = false;
 
-                // Import each document
-                importList.forEach(function(link, index) {
-                    this.importHref(link.getAttribute('href'), function(e) {
-                        // e.target.import is the import document.
-                        // No need to do anything here for now ...
-                        if (index == importList.length - 1) {
-                            this.importsFinished = true;
-                        }
-                    }, function(e) {
-                        // loading error
-                        if (index == importList.length - 1) {
-                            this.importsFinished = true;
-                        }
-                        throw 'Error: Could not import document, "' + link.getAttribute('href') + '"';
-                    });
-                }.bind(this));
-
-                // Load the content for each of the targets
-                // We need to wait for every import to finish
-                var importCheck = window.setInterval(function() {
-                    if (this.importsFinished) {
-                        this.fire('imports-finished', {importList: importList});
-
-                        targetSelectorList.forEach(function(targetSelector) {
-                            var target = document.querySelector(targetSelector);
-                            var content = doc.querySelector(targetSelector);
-
-                            if (content) {
-                                target.innerHTML = content.innerHTML;
+                    // Import each document
+                    importList.forEach(function(link, index) {
+                        this.importHref(link.getAttribute('href'), function(e) {
+                            // e.target.import is the import document.
+                            // No need to do anything here for now ...
+                            if (index == importList.length - 1) {
+                                this.importsFinished = true;
                             }
+                        }, function(e) {
+                            // loading error
+                            if (index == importList.length - 1) {
+                                this.importsFinished = true;
+                            }
+                            throw 'Error: Could not import document, "' + link.getAttribute('href') + '"';
                         });
-                        window.clearInterval(importCheck);
-                    }
-                }.bind(this), 50);
+                    }.bind(this));
+
+                    // Load the content for each of the targets
+                    // We need to wait for every import to finish
+                    var importCheck = window.setInterval(function() {
+                        if (this.importsFinished) {
+                            this.fire('imports-finished', {importList: importList});
+
+                            targetSelectorList.forEach(function(targetSelector) {
+                                var target = document.querySelector(targetSelector);
+                                var content = doc.querySelector(targetSelector);
+
+                                if (content) {
+                                    target.innerHTML = content.innerHTML;
+                                }
+                            });
+                            window.clearInterval(importCheck);
+                        }
+                    }.bind(this), 50);
+                }
 
                 this.fire('content-updated');
             },
@@ -275,12 +277,14 @@ triggers. This will only handle triggers that is wrapped inside this element.
 
         ready: function() {
             var triggerList = document.querySelectorAll(this.triggerSelector);
-            triggerList.forEach(function(trigger) {
-                trigger.addEventListener('click', function(ev) {
-                    ev.preventDefault();
-                    this.triggerRequest(ev.currentTarget.href);
+            if (triggerList) {
+                triggerList.forEach(function(trigger) {
+                    trigger.addEventListener('click', function(ev) {
+                        ev.preventDefault();
+                        this.triggerRequest(ev.currentTarget.href);
+                    }.bind(this));
                 }.bind(this));
-            }.bind(this));
+            }
         },
 
         /**
