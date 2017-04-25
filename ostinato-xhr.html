@@ -99,6 +99,15 @@ target dom node(s).
                 },
 
                 /**
+                 * Set to true if you don't want to run any imports that the
+                 * new content might have in <head>
+                 */
+                noImports: {
+                    type: Boolean,
+                    value: true
+                },
+
+                /**
                  * Whether or not to update the browser history when this
                  * component is used.
                  */
@@ -140,8 +149,8 @@ target dom node(s).
                 this.debounce(url, function() {
                     if (data) this.$.xhr.body = data;
                     this.$.xhr.url = url;
-                    this.$.xhr.generateRequest();
                     this.fire('request-started');
+                    this.$.xhr.generateRequest();
                 });
             },
 
@@ -172,53 +181,66 @@ target dom node(s).
             _handleResponse: function() {
                 this.fire('request-completed');
 
+                // TODO: Handle 302 redirect responses
+
                 var doc = new DOMParser().parseFromString(this.$.xhr.lastResponse, "text/html");
                 var targetSelectorList = this.targetSelectors.split(',');
 
-                // Since we might have new imports for the page being loaded
-                // we need to ensure that we import them before putting any
-                // content into the dom.
-                var importList = doc.querySelectorAll('link[rel="import"]');
-                if (importList) {
-                    this.importsFinished = false;
+                if (this.noImports) {
+                    this._insertContent(doc, targetSelectorList);
+                    this.fire('content-updated');
+                } else {
+                    // Since we might have new imports for the page being loaded
+                    // we need to ensure that we import them before putting any
+                    // content into the dom.
+                    var importList = doc.querySelectorAll('link[rel="import"]');
+                    if (importList) {
+                        this.importsFinished = false;
 
-                    // Import each document
-                    importList.forEach(function(link, index) {
-                        this.importHref(link.getAttribute('href'), function(e) {
-                            // e.target.import is the import document.
-                            // No need to do anything here for now ...
-                            if (index == importList.length - 1) {
-                                this.importsFinished = true;
-                            }
-                        }, function(e) {
-                            // loading error
-                            if (index == importList.length - 1) {
-                                this.importsFinished = true;
-                            }
-                            throw 'Error: Could not import document, "' + link.getAttribute('href') + '"';
-                        });
-                    }.bind(this));
-
-                    // Load the content for each of the targets
-                    // We need to wait for every import to finish
-                    var importCheck = window.setInterval(function() {
-                        if (this.importsFinished) {
-                            this.fire('imports-finished', {importList: importList});
-
-                            targetSelectorList.forEach(function(targetSelector) {
-                                var target = document.querySelector(targetSelector);
-                                var content = doc.querySelector(targetSelector);
-
-                                if (content) {
-                                    target.innerHTML = content.innerHTML;
+                        // Import each document
+                        importList.forEach(function(link, index) {
+                            this.importHref(link.getAttribute('href'), function(e) {
+                                // e.target.import is the import document.
+                                // No need to do anything here for now ...
+                                if (index == importList.length - 1) {
+                                    this.importsFinished = true;
                                 }
+                            }, function(e) {
+                                // loading error
+                                if (index == importList.length - 1) {
+                                    this.importsFinished = true;
+                                }
+                                throw 'Error: Could not import document, "' + link.getAttribute('href') + '"';
                             });
-                            window.clearInterval(importCheck);
-                        }
-                    }.bind(this), 50);
-                }
+                        }.bind(this));
 
-                this.fire('content-updated');
+                        // Load the content for each of the targets
+                        // We need to wait for every import to finish
+                        var importCheck = window.setInterval(function() {
+                            if (this.importsFinished) {
+                                this.fire('imports-finished', {importList: importList});
+                                this._insertContent(doc, targetSelectorList);
+                                window.clearInterval(importCheck);
+                            }
+                        }.bind(this), 50);
+                    }
+
+                    // Compensate for the interval import check above.
+                    this.async(function() {
+                        this.fire('content-updated');
+                    }, 50);
+                }
+            },
+
+            _insertContent: function(doc, targetSelectorList) {
+                targetSelectorList.forEach(function(targetSelector) {
+                    var target = document.querySelector(targetSelector);
+                    var content = doc.querySelector(targetSelector);
+
+                    if (content) {
+                        target.innerHTML = content.innerHTML;
+                    }
+                });
             },
 
             setContext: function(context) {
