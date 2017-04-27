@@ -102,9 +102,9 @@ target dom node(s).
                  * Set to true if you don't want to run any imports that the
                  * new content might have in <head>
                  */
-                noImports: {
+                skipImports: {
                     type: Boolean,
-                    value: true
+                    value: false
                 },
 
                 /**
@@ -186,7 +186,7 @@ target dom node(s).
                 var doc = new DOMParser().parseFromString(this.$.xhr.lastResponse, "text/html");
                 var targetSelectorList = this.targetSelectors.split(',');
 
-                if (this.noImports) {
+                if (this.skipImports) {
                     this._insertContent(doc, targetSelectorList);
                     this.fire('content-updated');
                 } else {
