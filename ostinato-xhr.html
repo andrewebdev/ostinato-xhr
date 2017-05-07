@@ -261,7 +261,10 @@ target dom node(s).
                     // do so manually here till this is fixed in browsers.
                     document.title = context.pageTitle;
                 }
-                this.fire('context-attached', {context: context});
+                this.fire('context-attached', {
+                    context: context,
+                    url: this.$.xhr.url
+                });
             },
 
             _handleError: function() {
