@@ -260,11 +260,13 @@ target dom node(s).
                     // always update the title.
                     // do so manually here till this is fixed in browsers.
                     document.title = context.pageTitle;
+
+                    this.fire('history-updated', {
+                        title: state.title,
+                        url: state.url
+                    });
                 }
-                this.fire('context-attached', {
-                    context: context,
-                    url: this.$.xhr.url
-                });
+                this.fire('context-attached', {context: context});
             },
 
             _handleError: function() {
