@@ -181,8 +181,6 @@ target dom node(s).
             _handleResponse: function() {
                 this.fire('request-completed');
 
-                // TODO: Handle 302 redirect responses
-
                 var doc = new DOMParser().parseFromString(this.$.xhr.lastResponse, "text/html");
                 var targetSelectorList = this.targetSelectors.split(',');
 
@@ -269,8 +267,8 @@ target dom node(s).
                 this.fire('context-attached', {context: context});
             },
 
-            _handleError: function() {
-                console.log('TODO: Handle error response');
+            _handleError: function(ev) {
+                this.fire('error', ev.detail);
             }
         });
     </script>

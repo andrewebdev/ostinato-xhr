@@ -51,6 +51,8 @@
                 <a href="view2.html" xhr-link>Load view 2</a>
                 <a href="view3.html" xhr-link>Load view 3</a>
 
+                <a href="doesnotexist.html" xhr-link>Load non-existing</a>
+
                 <hr>
 
                 <ostinato-xhr id="xhr"
@@ -95,6 +97,10 @@
 
                         xhr.addEventListener('content-updated', function(ev) {
                             console.log('Updated...');
+                        });
+
+                        xhr.addEventListener('error', function(ev) {
+                            console.log(ev.detail.error);
                         });
                     })();
                 </script>
