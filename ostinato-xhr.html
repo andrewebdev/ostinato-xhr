@@ -130,11 +130,16 @@ target dom node(s).
                                a request. Hash changes are only for on page
                                anchors.
                             */
+                            // FIXME: The regex below extracts the base url, but
+                            // it would be nice if we could use the URL api.
+                            // Unfortunately this is not supported by IE11.
+                            // We will replace this in future, but only when IE11
+                            // is sufficiently small in use.
                             var re = new RegExp("#([^\\s]*)");
-                            var stateURL = ev.state.url.replace(re, '');
-                            var xhrURL = this.$.xhr.url.replace(re, '');
+                            var stateUrl = ev.state.url.replace(re, '');
+                            var xhrUrl = this.$.xhr.url ? this.$.xhr.url.replace(re, '') : "";
 
-                            if (xhrURL != stateURL) {
+                            if (xhrUrl != stateUrl) {
                                 this.generateRequest(ev.state.url);
                             }
                         }
