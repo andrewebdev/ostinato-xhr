@@ -197,7 +197,7 @@ target dom node(s).
                     // we need to ensure that we import them before putting any
                     // content into the dom.
                     var importList = doc.querySelectorAll('link[rel="import"]');
-                    if (importList) {
+                    if ((importList) && (importList.length > 0)) {
                         this.importsFinished = false;
 
                         // Import each document
@@ -223,15 +223,15 @@ target dom node(s).
                             if (this.importsFinished) {
                                 this.fire('imports-finished', {importList: importList});
                                 this._insertContent(doc, targetSelectorList);
+                                this.fire('content-updated');
                                 window.clearInterval(importCheck);
                             }
                         }.bind(this), 50);
-                    }
-
-                    // Compensate for the interval import check above.
-                    this.async(function() {
+                    } else {
+                        // No imports, but we still want to insert content
+                        this._insertContent(doc, targetSelectorList);
                         this.fire('content-updated');
-                    }, 50);
+                    }
                 }
             },
 
