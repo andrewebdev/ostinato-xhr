@@ -114,6 +114,13 @@ target dom node(s).
                 updateHistory: {
                     type: Boolean,
                     value: false
+                },
+
+                baseUrl: {
+                    type: String,
+                    value: function() {
+                        return window.location.origin;
+                    }
                 }
             },
 
@@ -124,23 +131,16 @@ target dom node(s).
                             /*
                                Only generate the request if the urls actually
                                changed.
-
                                Compare the urls without any hash values.
                                This is because we don't want a hash to generate
                                a request. Hash changes are only for on page
                                anchors.
                             */
-                            // FIXME: The regex below extracts the base url, but
-                            // it would be nice if we could use the URL api.
-                            // Unfortunately this is not supported by IE11.
-                            // We will replace this in future, but only when IE11
-                            // is sufficiently small in use.
-                            var re = new RegExp("#([^\\s]*)");
-                            var stateUrl = ev.state.url.replace(re, '');
-                            var xhrUrl = this.$.xhr.url ? this.$.xhr.url.replace(re, '') : "";
+                            var stateUrl = new URL(ev.state.url, this.baseUrl);
+                            var xhrUrl = new URL(this.$.xhr.url, this.baseUrl);
 
-                            if (xhrUrl != stateUrl) {
-                                this.generateRequest(ev.state.url);
+                            if (xhrUrl.pathname != stateUrl.pathname) {
+                                this.generateRequest(stateUrl.pathname);
                             }
                         }
                     }.bind(this));
@@ -151,9 +151,15 @@ target dom node(s).
              * Make a request to the url, optionally passing data
              */
             generateRequest: function(url, data) {
-                this.debounce(url, function() {
+                // Work with the URL api so that we have some form of
+                // consistency
+                var nextUrl = new URL(url, this.baseUrl);
+                this.debounce(nextUrl.pathname, function() {
                     if (data) this.$.xhr.body = data;
-                    this.$.xhr.url = url;
+                    // Make sure to use just the pathname here. Because this
+                    // request should ONLY EVER be made on the current domain,
+                    // and we want to prevent cross-origin injection.
+                    this.$.xhr.url = nextUrl.pathname;
                     this.fire('request-started');
                     this.$.xhr.generateRequest();
                 });
@@ -247,16 +253,17 @@ target dom node(s).
             },
 
             setContext: function(context) {
+                var url = new URL(this.$.xhr.url, this.baseUrl);
                 if (this.updateHistory && this.$.xhr.url) {
                     var currentState = window.history.state;
                     var state = {
                         title: context.pageTitle,
-                        url: this.$.xhr.url
+                        url: url.pathname
                     };
 
                     // Only push the state if it actually changed
                     if ((!currentState) || (state.url != window.history.state.url)) {
-                        window.history.pushState(state, context.pageTitle, this.$.xhr.url);
+                        window.history.pushState(state, context.pageTitle, url.pathname);
                     }
 
                     // Due to a bug in many browsers, history api doesn't
@@ -266,7 +273,7 @@ target dom node(s).
 
                     this.fire('history-updated', {
                         title: state.title,
-                        url: state.url
+                        url: url
                     });
                 }
                 this.fire('context-attached', {context: context});
@@ -326,3 +333,4 @@ triggers. This will only handle triggers that is wrapped inside this element.
         }
     });
 </script>
+
