@@ -19,45 +19,10 @@ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 -->
 
-<link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../polymer/polymer-element.html">
 <link rel="import" href="../iron-ajax/iron-ajax.html">
 
 
-<script>
-    /**
-     * A base behaviour that will allow for changing page context.
-     */
-    var XHRContextBehavior = {
-        properties: {
-            /**
-             * What will the new page title be when applied
-             */
-            pageTitle: String,
-
-            /**
-             * The selector for the xhr element that should manage state
-             * if required.
-             */
-            xhrSelector: {
-                type: String,
-                value: "#xhrContent"
-            }
-        },
-
-        attached: function() {
-            document.querySelector(this.xhrSelector).setContext(this);
-        }
-    };
-</script>
-
-
-<!--
-`ostinato-xhr`
-Makes an ajax request to a resource, and inserts the html response into the
-target dom node(s).
-
-@demo demo/index.html 
--->
 <dom-module id="ostinato-xhr">
     <template>
         <iron-ajax
@@ -67,103 +32,117 @@ target dom node(s).
             headers='{"X-Requested-With": "XMLHttpRequest"}'
             content-type="[[contentType]]"
             on-response="_handleResponse"
-            on-error="_handleError"></iron-ajax>
+            on-error="_handleError">
+        </iron-ajax>
     </template>
     <script>
-        Polymer({
-            is: 'ostinato-xhr',
+        /**
+        * `ostinato-xhr`
+        * Makes xhr requests and updates only targeted html nodes with fragments
+        * from the response.
+        *
+        * @customElement
+        * @polymer
+        * @demo demo/index.html
+        */
+        class OstinatoXhr extends Polymer.Element {
+            static get is() { return 'ostinato-xhr'; }
+            static get properties() {
+                return {
+                    /**
+                    * A comma separated list of target element selectors which
+                    * should receive the new content.
+                    * If these nodes exist in the response content, then it will
+                    * be extracted directly from the response.
+                    */
+                    targetSelectors: String,
 
-            properties: {
-                /**
-                 * A comma separated list of target element selectors which
-                 * should receive the new content.
-                 * If these nodes exist in the response content, then it will
-                 * be extracted directly from the response.
-                 */
-                targetSelectors: String,
+                    /**
+                    * The http method to use for the request
+                    */
+                    method: {
+                        type: String,
+                        value: 'get'
+                    },
 
-                /**
-                 * The http method to use for the request
-                 */
-                method: {
-                    type: String,
-                    value: 'get'
-                },
+                    /**
+                    * The contenttype to use for the request
+                    */
+                    contentType: {
+                        type: String,
+                        value: null
+                    },
 
-                /**
-                 * The contenttype to use for the request
-                 */
-                contentType: {
-                    type: String,
-                    value: null
-                },
+                    /**
+                    * Set to true if you don't want to run any imports that the
+                    * new content might have in <head>
+                    */
+                    skipImports: {
+                        type: Boolean,
+                        value: false
+                    },
 
-                /**
-                 * Set to true if you don't want to run any imports that the
-                 * new content might have in <head>
-                 */
-                skipImports: {
-                    type: Boolean,
-                    value: false
-                },
+                    /**
+                    * Whether or not to update the browser history when this
+                    * component is used.
+                    */
+                    updateHistory: {
+                        type: Boolean,
+                        value: false
+                    },
 
-                /**
-                 * Whether or not to update the browser history when this
-                 * component is used.
-                 */
-                updateHistory: {
-                    type: Boolean,
-                    value: false
-                },
-
-                baseUrl: {
-                    type: String,
-                    value: function() {
-                        return window.location.origin;
+                    baseUrl: {
+                        type: String,
+                        value: function() {
+                            return window.location.origin;
+                        }
                     }
-                }
-            },
+                };
+            }
 
-            attached: function() {
+            ready() {
+                super.ready();
+
                 if (this.updateHistory) {
-                    window.addEventListener('popstate', function(ev) {
+                    window.addEventListener('popstate', (ev) => {
                         if (ev.state) {
                             /*
-                               Only generate the request if the urls actually
-                               changed.
-                               Compare the urls without any hash values.
-                               This is because we don't want a hash to generate
-                               a request. Hash changes are only for on page
-                               anchors.
+                                Only generate the request if the urls actually
+                                changed.
+                                Compare the urls without any hash values.
+                                This is because we don't want a hash to generate
+                                a request. Hash changes are only for on page
+                                anchors.
                             */
                             var stateUrl = new URL(ev.state.url, this.baseUrl);
                             var xhrUrl = new URL(this.$.xhr.url, this.baseUrl);
-
                             if (xhrUrl.pathname != stateUrl.pathname) {
                                 this.generateRequest(stateUrl.pathname);
                             }
                         }
-                    }.bind(this));
+                    });
                 }
-            },
+            }
 
             /**
-             * Make a request to the url, optionally passing data
-             */
-            generateRequest: function(url, data) {
-                // Work with the URL api so that we have some form of
-                // consistency
+            * Make a request to the url, optionally passing data
+            */
+            generateRequest(url, data) {
                 var nextUrl = new URL(url, this.baseUrl);
-                this.debounce(nextUrl.pathname, function() {
-                    if (data) this.$.xhr.body = data;
-                    // Make sure to use just the pathname here. Because this
-                    // request should ONLY EVER be made on the current domain,
-                    // and we want to prevent cross-origin injection.
-                    this.$.xhr.url = nextUrl.pathname;
-                    this.fire('request-started');
-                    this.$.xhr.generateRequest();
-                });
-            },
+                this._xhrDebounce = Polymer.Debouncer.debounce(
+                    this._xhrDebounce,
+                    Polymer.Async.microTask, () => {
+                        if (data) this.$.xhr.body = data;
+                        // Make sure to use just the pathname here. Because this
+                        // request should ONLY EVER be made on the current domain.
+                        this.$.xhr.url = nextUrl.pathname;
+                        this.$.xhr.generateRequest();
+                        this.dispatchEvent(new CustomEvent('request-started', {
+                            detail: {nextUrl: nextUrl}
+                        }))
+                    }
+                )
+            }
 
             /**
              * The response is where the majority of the heavy lifting happens.
@@ -179,110 +158,138 @@ target dom node(s).
              * Once all the imports are finished, we can then insert content
              * into their respecive containers.
              *
-             * WARNING: Regarding `<style>` tags inside imports.
+             * WARNING: Regarding `<style>` tags inside imported documents;
              * Style tags in the top level of the imported document will be
              * applied for every request, but won't be re-applied when you come
              * back to a page that have already been imported. Because of this
-             * you'll tart seeing style conflicts, as you navigate to one page,
-             * and then back to a previous page.
+             * you'll tart seeing style conflicts, as you navigate between
+             * pages.
+             *
              * For this reason it's propably better to wrap your custom styles
              * in a webcomponent's shadow dom, and then use that component to
              * style your content.
              */
-            _handleResponse: function() {
-                this.fire('request-completed');
+            _handleResponse(ev) {
+                var _this = this;
+                this.dispatchEvent(new CustomEvent('request-completed'));
 
                 var doc = new DOMParser().parseFromString(this.$.xhr.lastResponse, "text/html");
                 var targetSelectorList = this.targetSelectors.split(',');
 
                 if (this.skipImports) {
                     this._insertContent(doc, targetSelectorList);
-                    this.fire('content-updated');
+                    this.dispatchEvent(new CustomEvent('content-updated'));
                 } else {
                     // Since we might have new imports for the page being loaded
                     // we need to ensure that we import them before putting any
                     // content into the dom.
                     var importList = doc.querySelectorAll('link[rel="import"]');
                     if ((importList) && (importList.length > 0)) {
-                        this.importsFinished = false;
+                        this._importsFinished = false;
 
                         // Import each document
-                        importList.forEach(function(link, index) {
-                            this.importHref(link.getAttribute('href'), function(e) {
-                                // e.target.import is the import document.
-                                // No need to do anything here for now ...
-                                if (index == importList.length - 1) {
-                                    this.importsFinished = true;
-                                }
-                            }, function(e) {
-                                // loading error
-                                if (index == importList.length - 1) {
-                                    this.importsFinished = true;
-                                }
-                                throw 'Error: Could not import document, "' + link.getAttribute('href') + '"';
-                            });
-                        }.bind(this));
+                        importList.forEach((link, index) => {
+                            Polymer.importHref(
+                                link.getAttribute('href'),
+                                (e) => {
+                                    // e.target.import is the import document.
+                                    // No need to do anything here for now ...
+                                    if (index == importList.length - 1) {
+                                        this._importsFinished = true;
+                                    }
+                                },
+                                (e) => {
+                                    // loading error
+                                    if (index == importList.length - 1) {
+                                        this._importsFinished = true;
+                                    }
+                                    throw 'Error: Could not import document, "' + link.getAttribute('href') + '"';
+                                });
+                        });
 
-                        // Load the content for each of the targets
-                        // We need to wait for every import to finish
-                        var importCheck = window.setInterval(function() {
-                            if (this.importsFinished) {
-                                this.fire('imports-finished', {importList: importList});
+                        // Insert the content into our document, but only after
+                        // we every import is finished
+                        var importCheck = window.setInterval(() => {
+                            if (this._importsFinished) {
+                                this.dispatchEvent(new CustomEvent('imports-finished', {
+                                    detail: {importList: importList}
+                                }));
                                 this._insertContent(doc, targetSelectorList);
-                                this.fire('content-updated');
+                                this.dispatchEvent(new CustomEvent('content-updated'));
                                 window.clearInterval(importCheck);
                             }
-                        }.bind(this), 50);
+                        }, 50);
                     } else {
                         // No imports, but we still want to insert content
                         this._insertContent(doc, targetSelectorList);
-                        this.fire('content-updated');
+                        this.dispatchEvent(new CustomEvent('content-updated'));
                     }
                 }
-            },
+            }
 
-            _insertContent: function(doc, targetSelectorList) {
-                targetSelectorList.forEach(function(targetSelector) {
+            _handleError(ev) {
+                this.dispatchEvent(new CustomEvent('error', {
+                    detail: ev.detail
+                }))
+            }
+
+            _insertContent(doc, targetSelectorList) {
+                targetSelectorList.forEach((targetSelector) => {
                     var target = document.querySelector(targetSelector);
                     var content = doc.querySelector(targetSelector);
-
-                    if (content) {
-                        target.innerHTML = content.innerHTML;
-                    }
+                    if (content) { target.innerHTML = content.innerHTML; }
                 });
-            },
+            }
 
-            setContext: function(context) {
+            /**
+             * You should manually call this method when your want to update
+             * the browser history.
+             *
+             * The `context` object is optional and can be any javascript
+             * object or a DOM element.
+             *
+             * This context is then sent along to the `history-updated` and
+             * `context-attached` events, so that you can then use that to do
+             * any other tasks related to the page context.
+             */
+            setContext(pageTitle, context) {
+                // Context is a js object with methods that can override
+                // defaults we have here to return
                 var url = new URL(this.$.xhr.url, this.baseUrl);
                 if (this.updateHistory && this.$.xhr.url) {
                     var currentState = window.history.state;
                     var state = {
-                        title: context.pageTitle,
+                        title: pageTitle,
                         url: url.pathname
                     };
 
                     // Only push the state if it actually changed
                     if ((!currentState) || (state.url != window.history.state.url)) {
-                        window.history.pushState(state, context.pageTitle, url.pathname);
+                        window.history.pushState(state, pageTitle, url.pathname);
                     }
 
                     // Due to a bug in many browsers, history api doesn't
                     // always update the title.
                     // do so manually here till this is fixed in browsers.
-                    document.title = context.pageTitle;
+                    document.title = pageTitle;
 
-                    this.fire('history-updated', {
-                        title: state.title,
-                        url: url
-                    });
+                    this.dispatchEvent(new CustomEvent('history-updated', {
+                        detail: {
+                            title: state.title,
+                            url: url,
+                            context: context
+                        }
+                    }));
                 }
-                this.fire('context-attached', {context: context});
-            },
-
-            _handleError: function(ev) {
-                this.fire('error', ev.detail);
+                this.dispatchEvent(new CustomEvent('context-attached', {
+                    detail: {
+                        context: context
+                    }
+                }));
             }
-        });
+        }
+
+        window.customElements.define(OstinatoXhr.is, OstinatoXhr);
     </script>
 </dom-module>
 
@@ -293,44 +300,44 @@ Use this element to specify which elements should behave as ostinato-xhr
 triggers. This will only handle triggers that is wrapped inside this element.
 -->
 <script>
-    Polymer({
-        is: 'ostinato-xhr-triggers',
+    class OstinatoXhrTriggers extends Polymer.Element {
+        static get is() { return 'ostinato-xhr-triggers'; }
+        static get properties() {
+            return {
+                /**
+                * The query selector for the `ostinato-xhr` element to use when
+                * making the request.
+                */
+                xhrSelector: {
+                    type: String,
+                    value: "#xhrContent"
+                },
 
-        properties: {
-            /**
-             * The query selector for the `ostinato-xhr` element to use when
-             * making the request.
-             */
-            xhrSelector: {
-                type: String,
-                value: "#xhrContent"
-            },
+                triggerSelector: {
+                    type: String,
+                    value: "[xhr-link]"
+                }
+            };
+        }
 
-            triggerSelector: {
-                type: String,
-                value: "[xhr-link]"
-            }
-        },
+        ready() {
+            super.ready();
 
-        ready: function() {
             var triggerList = document.querySelectorAll(this.triggerSelector);
             if (triggerList) {
-                triggerList.forEach(function(trigger) {
-                    trigger.addEventListener('click', function(ev) {
+                triggerList.forEach((trigger) => {
+                    trigger.addEventListener('click', (ev) => {
                         ev.preventDefault();
                         this.triggerRequest(ev.currentTarget.href);
-                    }.bind(this));
-                }.bind(this));
+                    });
+                });
             }
-        },
-
-        /**
-         * Get the `ostinato-xhr` element and make the request.
-         */
-        triggerRequest: function(href) {
-            var loader = document.querySelector(this.xhrSelector);
-            loader.generateRequest(href);
         }
-    });
-</script>
 
+        triggerRequest(href) {
+            document.querySelector(this.xhrSelector).generateRequest(href);
+        }
+    }
+
+    window.customElements.define(OstinatoXhrTriggers.is, OstinatoXhrTriggers);
+</script>

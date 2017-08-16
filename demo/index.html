@@ -1,9 +1,12 @@
 <!doctype html>
-<html>
+<html lang="en">
 <head>
-    <title>ostinato-xhr demo</title>
+
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1, user-scalable=yes">
+    <meta name="viewport" content="width=device-width, minimum-scale=1, initial-scale=1, user-scalable=yes">
+
+    <title>ostinato-xhr demo</title>
+
     <script src="../../webcomponentsjs/webcomponents-lite.js"></script>
 
     <link rel="import" href="../../iron-demo-helpers/demo-pages-shared-styles.html">
@@ -11,35 +14,26 @@
 
     <link rel="import" href="../ostinato-xhr.html">
 
-    <style is="custom-style" include="demo-pages-shared-styles">
-    </style>
+    <custom-style>
+      <style is="custom-style" include="demo-pages-shared-styles">
+      </style>
+    </custom-style>
 
     <script>
         function loadContent() {
             var xhr = document.querySelector('#xhr');
-            xhr.generateRequest('view1.html');
+            xhr.generateRequest('/components/ostinato-xhr/demo/view1.html');
         }
-
-        // OUr custom xhr-context
-        Polymer({
-            is: 'xhr-context',
-            behaviors: [XHRContextBehavior]
-        });
     </script>
 </head>
 
 <body>
-
     <div class="vertical-section-container centered">
         <h3>Basic ostinato-xhr usage</h3>
 
         <h4>ostinato-xhr-triggers</h4>
         <p>Use <code>ostinato-xhr-triggers</code> to specify triggers for your
         <code>ostinato-xhr</code> element.</p>
-
-        <h4>Update History</h4>
-        <p>Notice how the browser history (and title) is upddated because
-        <code>update-hisory</code> property is set to True.</p>
 
         <demo-snippet>
             <template>
@@ -64,25 +58,14 @@
                     <!-- content gets inserted here -->
                 </div>
 
-                <ostinato-xhr-triggers id="basicTriggers" xhr-selector="#xhr"></ostinato-xhr-triggers>
+                <ostinato-xhr-triggers
+                    id="basicTriggers"
+                    xhr-selector="#xhr">
+                </ostinato-xhr-triggers>
 
                 <script>
                     (function() {
                         var xhr = document.querySelector('#xhr');
-
-                        // We are going to manually call the link events, since the
-                        // demo-snippet breaks the behaviour.
-                        // That said it does serve as a example of how it can be
-                        // triggered manually.
-                        var triggers = document.querySelector('#basicTriggers');
-                        var triggerLinks = document.querySelectorAll('[xhr-link]');
-                        triggerLinks.forEach(function(link) {
-                            link.addEventListener('click', function(ev) {
-                                ev.preventDefault();
-                                console.log(triggers);
-                                triggers.triggerRequest(ev.target.href);
-                            });
-                        });
 
                         // Example of how events can be used to show loading
                         // notifications etc.
@@ -96,7 +79,8 @@
                         });
 
                         xhr.addEventListener('content-updated', function(ev) {
-                            console.log('Updated...');
+                            var pageTitle = document.querySelector('#content > h3').innerText;
+                            xhr.setContext(pageTitle);
                         });
 
                         xhr.addEventListener('error', function(ev) {
@@ -118,8 +102,9 @@
             <template>
                 <a href="multiview.html" xhr-multi>Load content</a>
 
-                <ostinato-xhr id="xhrMultiple"
-                              target-selectors="#multiHeader,#multiContent">
+                <ostinato-xhr
+                    id="xhrMultiple"
+                    target-selectors="#multiHeader,#multiContent">
                 </ostinato-xhr>
 
                 <div id="multiple">
@@ -137,24 +122,8 @@
                 <ostinato-xhr-triggers
                     id="multiTriggers"
                     xhr-selector="#xhrMultiple"
-                    trigger-selector="[xhr-multi]"></ostinato-xhr-triggers>
-
-                <script>
-                    (function() {
-                        // We are going to manually call the link events, since the
-                        // demo-snippet breaks the behaviour.
-                        // That said it does serve as a example of how it can be
-                        // triggered manually.
-                        var triggers = document.querySelector('#multiTriggers');
-                        var triggerLinks = document.querySelectorAll('[xhr-multi]');
-                        triggerLinks.forEach(function(link) {
-                            link.addEventListener('click', function(ev) {
-                                ev.preventDefault();
-                                triggers.triggerRequest(ev.target.href);
-                            });
-                        });
-                    })();
-                </script>
+                    trigger-selector="[xhr-multi]">
+                </ostinato-xhr-triggers>
             </template>
         </demo-snippet>
     </div>
