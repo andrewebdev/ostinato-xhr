@@ -91,11 +91,16 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
         ready() {
             super.ready();
 
-            this._xhr = document.createElement('iron-ajax')
+            // Create a internal iron-ajax element to deal with the xhr
+            // requests
+            this._xhr = document.createElement('iron-ajax');
             this._xhr.method = this.method;
             this._xhr.handleAs = "text"
             this._xhr.headers = {"X-Requested-With": "XMLHttpRequest"};
             this._xhr.contentType = this.contentType;
+            // TODO: We may need to call the `this._xhr.ready()` method here
+            // depending on what the final iron-ajax integration is like
+
             this._xhr.addEventListener('response', this._handleResponse.bind(this));
             this._xhr.addEventListener('error', this._handleError.bind(this));
 
