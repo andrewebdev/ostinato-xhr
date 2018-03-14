@@ -56,7 +56,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 Makes an ajax request to a resource, and inserts the html response into the
 target dom node(s).
 
-@demo demo/index.html 
+@demo demo/index.html
 -->
 <dom-module id="ostinato-xhr">
     <template>
@@ -253,8 +253,8 @@ target dom node(s).
             },
 
             setContext: function(context) {
-                var url = new URL(this.$.xhr.url, this.baseUrl);
                 if (this.updateHistory && this.$.xhr.url) {
+                    var url = new URL(this.$.xhr.url, this.baseUrl);
                     var currentState = window.history.state;
                     var state = {
                         title: context.pageTitle,
