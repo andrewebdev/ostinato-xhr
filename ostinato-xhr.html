@@ -159,7 +159,7 @@ target dom node(s).
                     // Make sure to use just the pathname here. Because this
                     // request should ONLY EVER be made on the current domain,
                     // and we want to prevent cross-origin injection.
-                    this.$.xhr.url = nextUrl.pathname;
+                    this.$.xhr.url = nextUrl.pathname + nextUrl.search + nextUrl.hash;
                     this.fire('request-started');
                     this.$.xhr.generateRequest();
                 });
@@ -258,18 +258,18 @@ target dom node(s).
                     var currentState = window.history.state;
                     var state = {
                         title: context.pageTitle,
-                        url: url.pathname
+                        url: url.pathname + url.search + url.hash
                     };
 
                     // Only push the state if it actually changed
                     if ((!currentState) || (state.url != window.history.state.url)) {
-                        window.history.pushState(state, context.pageTitle, url.pathname);
+                        window.history.pushState(state, state.title, state.url);
                     }
 
                     // Due to a bug in many browsers, history api doesn't
                     // always update the title.
                     // do so manually here till this is fixed in browsers.
-                    document.title = context.pageTitle;
+                    document.title = state.title;
 
                     this.fire('history-updated', {
                         title: state.title,
